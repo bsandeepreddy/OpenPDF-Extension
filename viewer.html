@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OpenPDF | Local-First</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="toolbar">
+        <div class="left-group">
+            <div class="local-badge">● Local-Only</div>
+            <span id="file-name">Loading...</span>
+        </div>
+        <div class="center-group">
+            <button id="prev">←</button>
+            <span id="page-num">1</span> / <span id="page-count">0</span>
+            <button id="next">→</button>
+        </div>
+        <div class="right-group">
+            <button id="split-menu-btn" class="secondary">Split</button>
+            <button id="merge-menu-btn" class="secondary">Merge</button>
+            <button id="download-btn" class="primary">Download</button>
+        </div>
+    </header>
+    <div class="app-body">
+        <aside id="sidebar"><div id="thumbnail-container"></div></aside>
+        <main id="viewer-canvas-wrapper"><canvas id="pdf-render"></canvas></main>
+    </div>
+    <div id="split-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Extract Pages</h3>
+            <input type="number" id="start-page" placeholder="Start Page">
+            <input type="number" id="end-page" placeholder="End Page">
+            <div class="modal-actions">
+                <button onclick="closeModals()" class="secondary">Cancel</button>
+                <button id="confirm-split" class="primary">Extract</button>
+            </div>
+        </div>
+    </div>
+    <div id="merge-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Merge PDFs</h3>
+            <input type="file" id="merge-file-input" multiple accept=".pdf">
+            <div class="modal-actions">
+                <button onclick="closeModals()" class="secondary">Cancel</button>
+                <button id="confirm-merge" class="primary">Merge & Download</button>
+            </div>
+        </div>
+    </div>
+    <script src="libs/pdf.min.js"></script>
+    <script src="libs/pdf-lib.min.js"></script>
+    <script src="viewer.js"></script>
+</body>
+</html>
