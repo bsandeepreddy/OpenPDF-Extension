@@ -1,23 +1,479 @@
+/* ============================================================
+   OpenPDF — style.css (v2.0)
+   Dark-mode-ready, accessible, production-quality
+   ============================================================ */
+
+/* ── Reset & Base ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 :root {
-    --bg-color: #f5f5f7;
-    --sidebar-bg: #ffffff;
-    --accent-color: #0071e3;
-    --text-main: #1d1d1f;
-    --border-color: #d2d2d7;
+  --bg:         #1a1a2e;
+  --surface:    #16213e;
+  --surface2:   #0f3460;
+  --accent:     #e94560;
+  --accent2:    #533483;
+  --text:       #e0e0e0;
+  --text-muted: #9ca3af;
+  --border:     #2d3748;
+  --toolbar-h:  52px;
+  --sidebar-w:  140px;
+  --radius:     6px;
+  --shadow:     0 4px 16px rgba(0,0,0,0.4);
 }
-body { margin: 0; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-#toolbar { height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--border-color); background: white; z-index: 10; }
-.left-group, .right-group, .center-group { display: flex; align-items: center; gap: 10px; }
-.local-badge { background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-.app-body { display: flex; flex: 1; overflow: hidden; }
-#sidebar { width: 200px; border-right: 1px solid var(--border-color); overflow-y: auto; background: var(--sidebar-bg); }
-#viewer-canvas-wrapper { flex: 1; overflow-y: auto; background: var(--bg-color); display: flex; justify-content: center; padding: 20px; }
-canvas { box-shadow: 0 0 20px rgba(0,0,0,0.1); background: white; }
-.thumbnail { width: 140px; margin: 10px auto; border: 1px solid #ddd; cursor: pointer; display: block; }
-button { padding: 8px 15px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; }
-.primary { background: var(--accent-color); color: white; }
-.secondary { background: #e8e8ed; color: black; }
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+/* ── Toolbar ───────────────────────────────────────────────── */
+#toolbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--toolbar-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 12px;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+
+.left-group  { display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; }
+.center-group{ display: flex; align-items: center; gap: 8px; }
+.right-group { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+
+.local-badge {
+  background: #065f46;
+  color: #6ee7b7;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+#file-name {
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+#page-num, #page-count { min-width: 24px; text-align: center; font-weight: 600; }
+
+/* ── Buttons ───────────────────────────────────────────────── */
+button {
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  white-space: nowrap;
+  outline: none;
+}
+button:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+
+button.primary {
+  background: var(--accent);
+  color: #fff;
+}
+button.primary:hover  { background: #c73652; }
+button.primary:active { transform: scale(0.97); }
+
+button.secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+button.secondary:hover  { background: #1a4a7a; }
+button.secondary:active { transform: scale(0.97); }
+
+button.small { padding: 4px 8px; font-size: 12px; }
+
+button.active-mode {
+  background: var(--accent2);
+  color: #fff;
+  border-color: var(--accent2);
+}
+
+/* ── App body ──────────────────────────────────────────────── */
+.app-body {
+  display: flex;
+  height: 100vh;
+  padding-top: var(--toolbar-h);
+  overflow: hidden;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding: 8px 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+#thumbnail-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.thumbnail {
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.15s;
+  display: block;
+  max-width: 120px;
+  background: #2d3748;
+}
+.thumbnail:hover  { border-color: var(--accent2); }
+
+/* ── Viewer canvas area ────────────────────────────────────── */
+#viewer-canvas-wrapper {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg);
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+#pdf-render {
+  box-shadow: var(--shadow);
+  border-radius: 4px;
+  display: block;
+  max-width: 100%;
+}
+
+/* ── Edit overlay canvas ───────────────────────────────────── */
+#edit-overlay {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: crosshair;
+  pointer-events: none;
+  border-radius: 4px;
+  /* Transparent — draws on top of pdf-render */
+}
+
+/* ── Form overlay ──────────────────────────────────────────── */
+#form-overlay {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: all;
+}
+
+/* ── Form fields inside the overlay ─────────────────────────── */
+.form-field {
+  position: absolute;
+  background: rgba(255, 255, 180, 0.85);
+  border: 1.5px solid #f59e0b;
+  border-radius: 3px;
+  font-size: 13px;
+  padding: 2px 4px;
+  color: #111;
+  resize: none;
+  outline: none;
+}
+.form-field:focus { border-color: #d97706; box-shadow: 0 0 0 2px rgba(245,158,11,0.3); }
+
+/* ── Floating edit toolbar ─────────────────────────────────── */
+.floating-toolbar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow);
+  z-index: 200;
+}
+
+.toolbar-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tool-btn {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.tool-btn:hover  { background: var(--accent2); }
+.tool-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+#edit-color {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+
+#edit-size {
+  width: 70px;
+  accent-color: var(--accent);
+}
+
+/* ── Text box overlay (Edit mode) ────────────────────────────── */
+.pdf-textbox {
+  position: absolute;
+  min-width: 120px;
+  min-height: 28px;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px dashed var(--accent);
+  border-radius: 3px;
+  resize: both;
+  padding: 4px 6px;
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+  z-index: 50;
+}
+
+/* ── Modals ────────────────────────────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  backdrop-filter: blur(3px);
+}
 .modal.hidden { display: none; }
-.modal-content { background: white; padding: 25px; border-radius: 12px; width: 320px; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+.modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  width: 360px;
+  max-width: 95vw;
+  box-shadow: var(--shadow);
+}
+.modal-content.wide { width: 560px; }
+
+.modal-content h3 {
+  margin-bottom: 18px;
+  font-size: 17px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.modal-content label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="number"],
+.modal-content select,
+.modal-content textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 14px;
+  margin-top: 4px;
+}
+.modal-content input:focus,
+.modal-content select:focus { border-color: var(--accent); outline: none; }
+
+.modal-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 10px 0;
+  font-style: italic;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* ── Signature modal ───────────────────────────────────────── */
+.sign-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.tab-btn {
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 16px;
+}
+.tab-btn.active {
+  background: var(--accent2);
+  color: #fff;
+  border-color: var(--accent2);
+}
+.tab-panel { display: block; }
+.tab-panel.hidden { display: none; }
+
+#sign-canvas {
+  display: block;
+  background: #fff;
+  border-radius: var(--radius);
+  cursor: crosshair;
+  width: 100%;
+  max-width: 500px;
+  height: 160px;
+  border: 2px solid var(--border);
+  touch-action: none;
+}
+
+#sign-type-preview {
+  display: block;
+  background: #fff;
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 500px;
+  height: 100px;
+  margin-top: 12px;
+  border: 2px solid var(--border);
+}
+
+#sign-text-input {
+  width: 100%;
+  font-size: 20px;
+  padding: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+}
+
+#sign-font {
+  width: 100%;
+  margin-top: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px;
+  border-radius: var(--radius);
+}
+
+.sign-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.sign-actions-row label { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin: 0; }
+
+/* ── Signature drag overlay ────────────────────────────────── */
+#sig-drag-container {
+  position: fixed;
+  cursor: grab;
+  z-index: 600;
+  user-select: none;
+  background: rgba(255,255,255,0.12);
+  border: 2px dashed var(--accent);
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+#sig-drag-container.hidden { display: none; }
+#sig-drag-container:active { cursor: grabbing; }
+
+#sig-drag-img {
+  max-width: 250px;
+  max-height: 80px;
+  pointer-events: none;
+  display: block;
+}
+
+.sig-controls {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Toast ─────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+  z-index: 9999;
+  border: 1px solid var(--border);
+  animation: fadeIn 0.2s ease;
+  white-space: nowrap;
+}
+.toast.hidden { display: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── Hidden utility ────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ── Scrollbar theming (Webkit) ────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

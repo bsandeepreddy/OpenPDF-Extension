@@ -1,54 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>OpenPDF | Local-First</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenPDF | Free & Private Editor</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header id="toolbar">
-        <div class="left-group">
-            <div class="local-badge">● Local-Only</div>
-            <span id="file-name">Loading...</span>
-        </div>
-        <div class="center-group">
-            <button id="prev">←</button>
-            <span id="page-num">1</span> / <span id="page-count">0</span>
-            <button id="next">→</button>
-        </div>
-        <div class="right-group">
-            <button id="split-menu-btn" class="secondary">Split</button>
-            <button id="merge-menu-btn" class="secondary">Merge</button>
-            <button id="download-btn" class="primary">Download</button>
-        </div>
-    </header>
-    <div class="app-body">
-        <aside id="sidebar"><div id="thumbnail-container"></div></aside>
-        <main id="viewer-canvas-wrapper"><canvas id="pdf-render"></canvas></main>
+
+  <!-- ── TOOLBAR ─────────────────────────────────────────── -->
+  <header id="toolbar">
+    <div class="left-group">
+      <div class="local-badge">● Local-Only</div>
+      <span id="file-name">Loading...</span>
     </div>
-    <div id="split-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Extract Pages</h3>
-            <input type="number" id="start-page" placeholder="Start Page">
-            <input type="number" id="end-page" placeholder="End Page">
-            <div class="modal-actions">
-                <button onclick="closeModals()" class="secondary">Cancel</button>
-                <button id="confirm-split" class="primary">Extract</button>
-            </div>
-        </div>
+
+    <div class="center-group">
+      <button id="prev" title="Previous Page">&#8592;</button>
+      <span id="page-num">1</span> / <span id="page-count">0</span>
+      <button id="next" title="Next Page">&#8594;</button>
     </div>
-    <div id="merge-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Merge PDFs</h3>
-            <input type="file" id="merge-file-input" multiple accept=".pdf">
-            <div class="modal-actions">
-                <button onclick="closeModals()" class="secondary">Cancel</button>
-                <button id="confirm-merge" class="primary">Merge & Download</button>
-            </div>
-        </div>
+
+    <div class="right-group">
+      <button id="edit-btn"      class="secondary" title="Edit PDF — add text annotations">&#9998; Edit</button>
+      <button id="fill-btn"      class="secondary" title="Fill form fields">&#128221; Fill Form</button>
+      <button id="sign-btn"      class="secondary" title="Add your signature">&#9998; Sign</button>
+      <button id="split-menu-btn" class="secondary">Split</button>
+      <button id="merge-menu-btn" class="secondary">Merge</button>
+      <button id="download-btn"  class="primary">&#8659; Download</button>
     </div>
-    <script src="libs/pdf.min.js"></script>
-    <script src="libs/pdf-lib.min.js"></script>
-    <script src="viewer.js"></script>
+  </header>
+
+  <!-- ── MAIN LAYOUT ─────────────────────────────────────── -->
+  <div class="app-body">
+    <aside id="sidebar">
+      <div id="thumbnail-container"></div>
+    </aside>
+
+    <!-- Canvas wrapper — overlays stack here -->
+    <main id="viewer-canvas-wrapper">
+      <canvas id="pdf-render"></canvas>
+      <!-- Edit overlay: transparent canvas for drawing text annotations -->
+      <canvas id="edit-overlay" class="hidden"></canvas>
+      <!-- Form overlay: HTML inputs rendered over form fields -->
+      <div id="form-overlay" class="hidden"></div>
+    </main>
+  </div>
+
+  <!-- ── EDIT TOOLBAR (shown when Edit mode is active) ────── -->
+  <div id="edit-toolbar" class="floating-toolbar hidden">
+    <span class="toolbar-label">Edit Mode</span>
+    <button id="add-text-btn"  class="tool-btn active" title="Add text box">T</button>
+    <button id="draw-btn"      class="tool-btn"        title="Draw / annotate">&#9998;</button>
+    <button id="highlight-btn" class="tool-btn"        title="Highlight text">H</button>
+    <input  type="color"       id="edit-color"         value="#000000" title="Color">
+    <input  type="range"       id="edit-size"          min="8" max="48" value="14" title="Size/thickness">
+    <button id="edit-undo-btn" class="tool-btn"        title="Undo">&#8617;</button>
+    <button id="edit-done-btn" class="primary small"   title="Flatten annotations into PDF">Save to PDF</button>
+  </div>
+
+  <!-- ── SIGN MODAL ──────────────────────────────────────── -->
+  <div id="sign-modal" class="modal hidden">
+    <div class="modal-content wide">
+      <h3>&#9998; Add Signature</h3>
+      <div class="sign-tabs">
+        <button class="tab-btn active" data-tab="draw">Draw</button>
+        <button class="tab-btn"        data-tab="type">Type</button>
+      </div>
+
+      <!-- Draw tab -->
+      <div id="sign-draw-tab" class="tab-panel">
+        <canvas id="sign-canvas" width="500" height="160"></canvas>
+        <div class="sign-actions-row">
+          <button id="sign-clear-btn" class="secondary small">Clear</button>
+          <label>Color: <input type="color" id="sign-color" value="#000080"></label>
+          <label>Thickness: <input type="range" id="sign-thickness" min="1" max="8" value="2"></label>
+        </div>
+      </div>
+
+      <!-- Type tab -->
+      <div id="sign-type-tab" class="tab-panel hidden">
+        <input type="text" id="sign-text-input" placeholder="Type your name" maxlength="60">
+        <select id="sign-font">
+          <option value="'Dancing Script', cursive">Script</option>
+          <option value="'Caveat', cursive">Casual</option>
+          <option value="'Great Vibes', cursive">Elegant</option>
+          <option value="serif">Serif</option>
+        </select>
+        <canvas id="sign-type-preview" width="500" height="100"></canvas>
+      </div>
+
+      <p class="modal-hint">Drag the signature to position it on the page after inserting.</p>
+      <div class="modal-actions">
+        <button onclick="closeModals()" class="secondary">Cancel</button>
+        <button id="confirm-sign" class="primary">Insert Signature</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SPLIT MODAL ─────────────────────────────────────── -->
+  <div id="split-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Extract Pages</h3>
+      <label>Start Page <input type="number" id="start-page" min="1" placeholder="e.g. 1"></label>
+      <label>End Page   <input type="number" id="end-page"   min="1" placeholder="e.g. 3"></label>
+      <div class="modal-actions">
+        <button onclick="closeModals()" class="secondary">Cancel</button>
+        <button id="confirm-split" class="primary">Extract</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MERGE MODAL ─────────────────────────────────────── -->
+  <div id="merge-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Merge PDFs</h3>
+      <p class="modal-hint">Current PDF + files you select will be merged in order.</p>
+      <input type="file" id="merge-file-input" multiple accept=".pdf">
+      <div class="modal-actions">
+        <button onclick="closeModals()" class="secondary">Cancel</button>
+        <button id="confirm-merge" class="primary">Merge &amp; Download</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SIGNATURE DRAG OVERLAY ──────────────────────────── -->
+  <!-- After inserting, user drags this to position the signature -->
+  <div id="sig-drag-container" class="hidden">
+    <img id="sig-drag-img" draggable="false" alt="Signature">
+    <div class="sig-controls">
+      <button id="sig-place-btn" class="primary small">Place Here</button>
+      <button id="sig-cancel-btn" class="secondary small">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ── SCRIPTS ──────────────────────────────────────────── -->
+  <script src="libs/pdf.min.js"></script>
+  <script src="libs/pdf-lib.min.js"></script>
+  <script src="viewer.js"></script>
 </body>
 </html>
